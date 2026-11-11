@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="paper">#FBF6F2</color>
-    <color name="teal">#0C474B</color>
+    <color name="paper">#F3F9F6</color>
+    <color name="teal">#0A5C5A</color>
     <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/paper</item>
         <item name="android:statusBarColor">@color/paper</item>
