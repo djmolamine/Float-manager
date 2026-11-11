@@ -40,20 +40,20 @@ button{cursor:pointer;border:0;background:none;padding:0;text-align:inherit}
 #nav button span.ic{padding:3px 16px;border-radius:8px;display:grid;place-items:center}
 #nav button.on{color:var(--brand)}
 #nav button.on span.ic{background:var(--brand-soft)}
-.hero{background:linear-gradient(135deg,#8f0717 0%,var(--brand) 52%,var(--teal-2) 100%);border-radius:14px;padding:20px;color:#fff;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 12px 22px -16px rgba(224,20,42,.9)}
+.hero{background:linear-gradient(180deg,#8f0717 0%,var(--brand) 52%,var(--teal-2) 100%);border-radius:14px;padding:22px 20px;color:#fff;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 12px 22px -16px rgba(224,20,42,.9)}
 .hero .ttl{font-weight:800;color:#fff;font-size:21px;line-height:1.15;letter-spacing:-.02em;text-wrap:balance}
 .hero .lbl{font-size:12px;opacity:.85}
 .hero .big{font-weight:800;letter-spacing:-.03em;font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums;color:#fff}
 .hero .big small{font-family:var(--body);font-size:14px;opacity:.7;font-weight:600}
-.hero .pills{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.pill{background:#fff;color:var(--ink);border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.hero .pills{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;width:100%}
+.pill{background:#fff;color:var(--ink);border-radius:8px;padding:11px 14px;font-weight:700;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:6px}
 .sec{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:4px 2px -4px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tool{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:14px;font-weight:700;font-size:13.5px;min-height:92px;justify-content:space-between}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;font-weight:700;font-size:13.5px;min-height:92px;justify-content:space-between}
 .tool:hover{border-color:var(--brand)}
 .tool .tic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center}
 .tool small{display:block;font-weight:500;color:var(--muted);font-size:12px}
-.c-blue,.c-red,.c-green,.c-violet,.c-amber{background:var(--brand-soft);color:var(--brand);border:1px solid #ffd3d8}.c-teal{background:linear-gradient(135deg,var(--brand),var(--teal-2));color:#fff}
+.c-blue,.c-red,.c-green,.c-violet,.c-amber{background:var(--brand-soft);color:var(--brand);border:1px solid #ffd3d8}.c-teal{background:linear-gradient(180deg,var(--brand),var(--teal-2));color:#fff}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
 .bal{text-align:center;display:flex;flex-direction:column;gap:4px}
 .bal .n{font-size:12px;color:var(--mid)}
@@ -62,8 +62,8 @@ button{cursor:pointer;border:0;background:none;padding:0;text-align:inherit}
 .bal .split div+div{border-inline-start:1px solid var(--line)}
 .bal .split b{display:block;font-variant-numeric:tabular-nums}
 .bal .split span{font-size:11.5px;color:var(--mid)}
-.bal.vivid{border:0;color:#fff;background:linear-gradient(135deg,#8f0717,var(--brand) 55%,var(--teal-2));box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 12px 22px -16px rgba(224,20,42,.9)}
-.bal.vivid.col{background:linear-gradient(135deg,#0c0d10,#2b2d34);box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 12px 22px -16px rgba(0,0,0,.8);border-top:3px solid var(--brand)}
+.bal.vivid{border:0;color:#fff;background:linear-gradient(180deg,#8f0717,var(--brand) 55%,var(--teal-2));box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 12px 22px -16px rgba(224,20,42,.9)}
+.bal.vivid.col{background:linear-gradient(180deg,#0c0d10,#2b2d34);box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 12px 22px -16px rgba(0,0,0,.8);border-top:3px solid var(--brand)}
 .bal.vivid .n,.bal.vivid .split span,.bal.vivid .v small{color:rgba(255,255,255,.82)!important}
 .bal.vivid .v{font-weight:800;font-size:40px;letter-spacing:-.03em}
 .bal.vivid .v.out{color:#ffb3ba}
@@ -71,7 +71,7 @@ button{cursor:pointer;border:0;background:none;padding:0;text-align:inherit}
 .bal.vivid .split b.in,.bal.vivid .split b.out{color:#fff}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .btn{border-radius:10px;padding:12px 16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;min-height:46px}
-.btn.green{background:linear-gradient(135deg,var(--brand),var(--teal-2));color:#fff}.btn.red{background:var(--ink);color:#fff}.btn.in{background:var(--green);color:#fff}
+.btn.green{background:linear-gradient(180deg,var(--brand),var(--teal-2));color:#fff}.btn.red{background:var(--ink);color:#fff}.btn.in{background:var(--green);color:#fff}
 .btn.ghost{background:var(--card);border:1px solid var(--line)}
 .btn.soft{background:var(--brand-soft);color:var(--brand)}
 .btn.block{width:100%}
@@ -164,7 +164,7 @@ saveFail:"Couldn't save. Check your connection and try again.",readOnly:"You hav
 dlNo:"Downloads aren't available in this view.",dlFail:"The file couldn't be saved.",dlOk:"File saved",building:"Building file…",
 page:"Page",generated:"Generated",attachments:"Receipts",no:"#",in_:"In",out_:"Out",bal:"Balance",period:"Period",type:"Type",hasRec:"Receipt",yes:"Yes",
 defAcc:"Mohamed Lamine",defCats:["Fuel","Transport","Meals","Office supplies","Maintenance","Shipping","Customer visit","Other"],defCcs:["General","Sales","Operations"],
-repDefault:"Petty cash report",collections:"Customer collections",collectionsS:"Cash you hold for the company",colHeld:"Customer cash you hold",collected:"Collected",paidOut:"Handed over or used",k_col:"Customer paid me",k_flt:"Took float",k_bank:"Sent to company by bank",k_goods:"Bought goods",k_sup:"Paid a supplier",customer:"Customer",supplier:"Supplier",shop:"Shop or supplier",ref:"Invoice or receipt no.",bankRef:"Transfer reference",note:"Note",toAcc:"Into float account",floatFrom:"Float taken from customer collections",noCol:"Nothing collected yet. Record a customer payment to start.",overCol:"Saved. This is more than the customer cash you hold.",held:"held",storeNative:"Entries are saved on this phone only. Make a backup file regularly and keep it somewhere safe.",backup:"Backup",backupBtn:"Save a backup file",restoreBtn:"Restore from a backup file",restoreT:"Restore backup",restoreQ:"This replaces everything in the app with the backup:",restoreGo:"Replace and restore",badBackup:"That file is not a Float Manager backup.",restored:"Backup restored",entriesN:"entries",photosN:"photos",dlNative:"Saved to Downloads / Float Manager",sharePdf:"Export PDF to share",exists:"Already in the list.",photoBig:"That photo couldn't be read. Try another."
+repDefault:"Petty cash report",collections:"Customer collections",collectionsS:"Cash you hold for the company",colHeld:"Customer cash you hold",collected:"Collected",paidOut:"Handed over or used",k_col:"Customer paid me",k_flt:"Took float",k_bank:"Sent to bank",k_goods:"Bought goods",k_sup:"Paid a supplier",customer:"Customer",supplier:"Supplier",shop:"Shop or supplier",ref:"Invoice or receipt no.",bankRef:"Transfer reference",note:"Note",toAcc:"Into float account",floatFrom:"Float taken from customer collections",noCol:"Nothing collected yet. Record a customer payment to start.",overCol:"Saved. This is more than the customer cash you hold.",held:"held",storeNative:"Entries are saved on this phone only. Make a backup file regularly and keep it somewhere safe.",backup:"Backup",backupBtn:"Save a backup file",restoreBtn:"Restore from a backup file",restoreT:"Restore backup",restoreQ:"This replaces everything in the app with the backup:",restoreGo:"Replace and restore",badBackup:"That file is not a Float Manager backup.",restored:"Backup restored",entriesN:"entries",photosN:"photos",dlNative:"Saved to Downloads / Float Manager",sharePdf:"Export PDF to share",exists:"Already in the list.",photoBig:"That photo couldn't be read. Try another."
 },ar:{
 app:"مدير العهدة",morning:"صباح الخير",afternoon:"مساء الخير",evening:"مساء الخير",
 heroT:"العهدة والمصروفات",inHand:"النقد المتوفر، كل الحسابات",cashOut:"صرف",cashIn:"قبض",
@@ -190,7 +190,7 @@ saveFail:"تعذّر الحفظ. تحقق من الاتصال وحاول مجد�
 dlNo:"التنزيل غير متاح في هذا العرض.",dlFail:"تعذّر حفظ الملف.",dlOk:"تم حفظ الملف",building:"جارٍ إنشاء الملف…",
 page:"صفحة",generated:"أُنشئ في",attachments:"الإيصالات",no:"م",in_:"قبض",out_:"صرف",bal:"الرصيد",period:"الفترة",type:"النوع",hasRec:"إيصال",yes:"نعم",
 defAcc:"Mohamed Lamine",defCats:["وقود","مواصلات","وجبات","لوازم مكتبية","صيانة","شحن","زيارة عميل","أخرى"],defCcs:["عام","المبيعات","العمليات"],
-repDefault:"تقرير العهدة",collections:"تحصيلات العملاء",collectionsS:"نقد تحتفظ به لصالح الشركة",colHeld:"نقد العملاء الذي بحوزتك",collected:"المحصَّل",paidOut:"المسلَّم أو المستخدم",k_col:"دفع لي العميل",k_flt:"أخذت عهدة",k_bank:"حوّلت للشركة عبر البنك",k_goods:"اشتريت بضاعة",k_sup:"دفعت لمورّد",customer:"العميل",supplier:"المورّد",shop:"المحل أو المورّد",ref:"رقم الفاتورة أو الإيصال",bankRef:"مرجع التحويل",note:"ملاحظة",toAcc:"إلى حساب العهدة",floatFrom:"عهدة مأخوذة من تحصيلات العملاء",noCol:"لا توجد تحصيلات بعد. سجّل دفعة عميل للبدء.",overCol:"تم الحفظ. المبلغ أكبر من نقد العملاء الذي بحوزتك.",held:"بحوزتك",storeNative:"القيود محفوظة على هذا الهاتف فقط. احفظ نسخة احتياطية بانتظام في مكان آمن.",backup:"النسخ الاحتياطي",backupBtn:"حفظ ملف نسخة احتياطية",restoreBtn:"استعادة من ملف نسخة احتياطية",restoreT:"استعادة النسخة",restoreQ:"سيُستبدل كل ما في التطبيق بالنسخة الاحتياطية:",restoreGo:"استبدال واستعادة",badBackup:"هذا الملف ليس نسخة احتياطية من مدير العهدة.",restored:"تمت الاستعادة",entriesN:"قيد",photosN:"صورة",dlNative:"حُفظ في التنزيلات / Float Manager",sharePdf:"تصدير PDF للمشاركة",exists:"موجود في القائمة.",photoBig:"تعذّرت قراءة الصورة. جرّب صورة أخرى."
+repDefault:"تقرير العهدة",collections:"تحصيلات العملاء",collectionsS:"نقد تحتفظ به لصالح الشركة",colHeld:"نقد العملاء الذي بحوزتك",collected:"المحصَّل",paidOut:"المسلَّم أو المستخدم",k_col:"دفع لي العميل",k_flt:"أخذت عهدة",k_bank:"حوّلت للبنك",k_goods:"اشتريت بضاعة",k_sup:"دفعت لمورّد",customer:"العميل",supplier:"المورّد",shop:"المحل أو المورّد",ref:"رقم الفاتورة أو الإيصال",bankRef:"مرجع التحويل",note:"ملاحظة",toAcc:"إلى حساب العهدة",floatFrom:"عهدة مأخوذة من تحصيلات العملاء",noCol:"لا توجد تحصيلات بعد. سجّل دفعة عميل للبدء.",overCol:"تم الحفظ. المبلغ أكبر من نقد العملاء الذي بحوزتك.",held:"بحوزتك",storeNative:"القيود محفوظة على هذا الهاتف فقط. احفظ نسخة احتياطية بانتظام في مكان آمن.",backup:"النسخ الاحتياطي",backupBtn:"حفظ ملف نسخة احتياطية",restoreBtn:"استعادة من ملف نسخة احتياطية",restoreT:"استعادة النسخة",restoreQ:"سيُستبدل كل ما في التطبيق بالنسخة الاحتياطية:",restoreGo:"استبدال واستعادة",badBackup:"هذا الملف ليس نسخة احتياطية من مدير العهدة.",restored:"تمت الاستعادة",entriesN:"قيد",photosN:"صورة",dlNative:"حُفظ في التنزيلات / Float Manager",sharePdf:"تصدير PDF للمشاركة",exists:"موجود في القائمة.",photoBig:"تعذّرت قراءة الصورة. جرّب صورة أخرى."
 }};
 let S={main:null,months:{},tab:"home",sub:null,q:"",shared:{},team:null};
 const lang=()=>S.main?.lang||(navigator.language||"").startsWith("ar")&&"ar"||"en";
@@ -222,7 +222,7 @@ back:'<path d="M15 5l-7 7 7 7"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<pa
 search:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
 clip:'<path d="M8 12l6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l7-7"/>',chev:'<path d="M9 5l7 7-7 7"/>',
 coin:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H15"/>'};
-const LOGO=`<svg width="32" height="32" viewBox="16 16 76 76" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c0819"/><stop offset="1" stop-color="#ff3044"/></linearGradient></defs><rect x="16" y="16" width="76" height="76" fill="url(#lg)"/><circle cx="56" cy="40" r="15" fill="#121316"/><circle cx="56" cy="40" r="9.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.5"/><path d="M34,44h40a7,7 0 0 1 7,7v22a7,7 0 0 1 -7,7h-40a7,7 0 0 1 -7,-7v-22a7,7 0 0 1 7,-7z" fill="#fff"/><path d="M35,53h26" stroke="#ffc9cf" stroke-width="3" stroke-linecap="round"/><path d="M68,56h13v12h-13a6,6 0 0 1 0,-12z" fill="#e0142a"/><circle cx="69.5" cy="62" r="2.4" fill="#fff"/></svg>`;
+const LOGO=`<svg width="32" height="32" viewBox="16 16 76 76" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3044"/><stop offset="1" stop-color="#9c0819"/></linearGradient></defs><rect x="16" y="16" width="76" height="76" fill="url(#lg)"/><circle cx="54" cy="40" r="15" fill="#121316"/><circle cx="54" cy="40" r="9.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.5"/><path d="M34,44h40a7,7 0 0 1 7,7v22a7,7 0 0 1 -7,7h-40a7,7 0 0 1 -7,-7v-22a7,7 0 0 1 7,-7z" fill="#fff"/><path d="M29,53Q54,67 79,53" fill="none" stroke="#ffc9cf" stroke-width="3" stroke-linecap="round"/><circle cx="54" cy="61" r="6.5" fill="#e0142a"/><circle cx="54" cy="61" r="2.4" fill="#fff"/></svg>`;
 const ic=(n,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 
 /* ---------- pure money logic ---------- */
