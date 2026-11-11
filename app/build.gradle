@@ -1,0 +1,45 @@
+plugins { id 'com.android.application' }
+
+def buildNo = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+android {
+    namespace 'com.djmolamine.floatmanager'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.djmolamine.floatmanager'
+        minSdk 26
+        targetSdk 34
+        versionCode buildNo
+        versionName "1.0.${buildNo}"
+    }
+    signingConfigs {
+        release {
+            // Fixed key so every build installs over the previous one without losing data.
+            storeFile rootProject.file('keystore/floatmanager.jks')
+            storePassword 'floatmanager'
+            keyAlias 'floatmanager'
+            keyPassword 'floatmanager'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.core:core:1.13.1'
+}

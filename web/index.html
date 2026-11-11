@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Float Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout idea: one phone-width column, deep-teal hero card on a warm paper ground, white tool cards, green = money in, red = money out. Single light theme by choice. */
+:root{
+  color-scheme:light;
+  --paper:#fbf6f2; --card:#ffffff; --line:#efe7e1; --field:#f7ece5;
+  --teal:#0c474b; --teal-2:#0a3a3e; --cream:#f0dba6;
+  --green:#12955a; --green-soft:#e3f4eb; --red:#e23a3f; --red-soft:#fde9e9;
+  --amber:#b7791f; --amber-soft:#fdf1d8;
+  --ink:#17201f; --muted:#8b8f8d; --mid:#5c6462;
+  --display:"DM Serif Display","IBM Plex Sans Arabic",Georgia,serif;
+  --body:"Manrope","IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0;text-align:inherit}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:8px}
+#app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;background:var(--paper)}
+#top{display:flex;align-items:center;gap:10px;padding:14px 18px 8px;min-height:56px}
+#top h1{font-size:17px;font-weight:700;margin:0;flex:1;text-wrap:balance}
+.mark{width:30px;height:30px;border-radius:9px;background:var(--teal);display:grid;place-items:center;color:var(--cream);flex:none}
+.iconbtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none}
+.iconbtn:hover{background:var(--line)}
+[dir=rtl] .flip{transform:scaleX(-1)}
+#view{flex:1;overflow-y:auto;padding:6px 18px 24px;display:flex;flex-direction:column;gap:14px}
+#nav{display:flex;border-top:1px solid var(--line);background:var(--card);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+#nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:4px 0;font-weight:600}
+#nav button span.ic{padding:3px 16px;border-radius:999px;display:grid;place-items:center}
+#nav button.on{color:var(--green)}
+#nav button.on span.ic{background:var(--green-soft)}
+.hero{background:linear-gradient(160deg,var(--teal),var(--teal-2));border-radius:20px;padding:20px;color:#fff;display:flex;flex-direction:column;gap:6px;box-shadow:0 10px 24px -14px rgba(12,71,75,.7)}
+.hero .ttl{font-family:var(--display);color:var(--cream);font-size:24px;line-height:1.15;text-wrap:balance}
+.hero .lbl{font-size:12px;opacity:.75}
+.hero .big{font-family:var(--display);font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums;color:#fff}
+.hero .big small{font-family:var(--body);font-size:14px;opacity:.7;font-weight:600}
+.hero .pills{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pill{background:#fff;color:var(--teal);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.sec{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:4px 2px -4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:14px;font-weight:700;font-size:13.5px;min-height:92px;justify-content:space-between}
+.tool:hover{border-color:#dfd3ca}
+.tool .tic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center}
+.tool small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.c-blue{background:#e8effd;color:#3b6fe0}.c-red{background:var(--red-soft);color:var(--red)}.c-green{background:var(--green-soft);color:var(--green)}.c-violet{background:#eeeafd;color:#6b55d9}.c-amber{background:var(--amber-soft);color:var(--amber)}.c-teal{background:#dff0ef;color:var(--teal)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.bal{text-align:center;display:flex;flex-direction:column;gap:4px}
+.bal .n{font-size:12px;color:var(--mid)}
+.bal .v{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.bal .split{display:grid;grid-template-columns:1fr 1fr;margin-top:8px}
+.bal .split div+div{border-inline-start:1px solid var(--line)}
+.bal .split b{display:block;font-variant-numeric:tabular-nums}
+.bal .split span{font-size:11.5px;color:var(--mid)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border-radius:999px;padding:12px 16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;min-height:46px}
+.btn.green{background:var(--green);color:#fff}.btn.red{background:var(--red);color:#fff}
+.btn.ghost{background:var(--card);border:1px solid var(--line)}
+.btn.soft{background:var(--green-soft);color:var(--green)}
+.btn.block{border-radius:12px;width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.btn .circ{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center}
+.btn.red .circ{color:var(--red)}.btn.green .circ{color:var(--green)}
+.search{background:var(--field);border-radius:14px;display:flex;align-items:center;gap:10px;padding:0 14px;color:var(--green)}
+.search input{flex:1;border:0;background:none;padding:13px 0;outline:none;color:var(--ink);min-width:0}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;width:100%}
+.row:hover{border-color:#dfd3ca}
+.row .g{flex:1;min-width:0}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .s{font-size:12px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.in{color:var(--green)}.out{color:var(--red)}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.st-draft{background:var(--line);color:var(--mid)}.st-submitted{background:var(--amber-soft);color:var(--amber)}.st-approved{background:var(--green-soft);color:var(--green)}.st-returned{background:var(--red-soft);color:var(--red)}
+.empty{text-align:center;color:var(--muted);padding:26px 12px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border-radius:14px;padding:12px;border:1px solid var(--line);background:var(--card)}
+.tile span{font-size:11.5px;color:var(--mid)}.tile b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.tile.r{background:var(--red-soft);border-color:#f6cfcf}.tile.r b{color:var(--red)}
+.tile.g{background:var(--green-soft);border-color:#c5e6d4}.tile.g b{color:var(--green)}
+.note{font-size:13px;color:var(--mid);background:var(--field);border-radius:12px;padding:10px 12px}
+.note.warn{background:var(--amber-soft);color:#7a5210}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:var(--mid)}
+.inp{background:var(--field);border:1px solid transparent;border-radius:12px;padding:12px;font-size:15px;width:100%;color:var(--ink);font-weight:500}
+.inp:focus{outline:none;border-color:var(--green);background:#fff}
+.amtinp{font-size:30px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--field);border-radius:999px;padding:4px}
+.seg button{border-radius:999px;padding:9px;text-align:center;font-weight:700;color:var(--mid)}
+.seg button.on.o{background:var(--red);color:#fff}.seg button.on.i{background:var(--green);color:#fff}.seg button.on.n{background:var(--teal);color:#fff}
+#sheet{position:fixed;inset:0;background:rgba(15,25,25,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+#sheet[hidden]{display:none}
+#sheet .box{background:var(--paper);width:100%;max-width:480px;max-height:92%;overflow-y:auto;border-radius:22px 22px 0 0;padding:18px;display:flex;flex-direction:column;gap:12px}
+#sheet .hd{display:flex;align-items:center;gap:8px}
+#sheet .hd h2{flex:1;margin:0;font-size:17px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 12px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+[dir=rtl] .chip{padding:6px 12px 6px 6px}
+.chip button{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;color:var(--mid);font-size:14px;line-height:1}
+.inline{display:flex;gap:8px}.inline .inp{flex:1;min-width:0}
+.thumb{max-width:100%;max-height:220px;border-radius:12px;border:1px solid var(--line);display:block}
+.attach{border:1.5px dashed #d9c9bd;border-radius:12px;padding:12px;text-align:center;color:var(--mid);font-weight:600;cursor:pointer;font-size:13.5px}
+#toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:600;z-index:30;max-width:90%;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+table.lines{width:100%;border-collapse:collapse;font-size:13px}
+table.lines th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:start;padding:6px 4px;border-bottom:1px solid var(--line)}
+table.lines td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+table.lines td.num,table.lines th.num{text-align:end;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top"></header>
+  <main id="view"></main>
+  <nav id="nav"></nav>
+</div>
+<div id="sheet" hidden></div>
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ---------- i18n ---------- */
+const T={en:{
+app:"Float Manager",morning:"Good morning",afternoon:"Good afternoon",evening:"Good evening",
+heroT:"Petty Cash & Expenses",inHand:"Cash in hand, all accounts",cashOut:"Cash out",cashIn:"Cash in",
+tools:"Tools",recent:"Recent entries",accounts:"Accounts",accountsS:"Balances per cash box",reports:"Reports",reportsS:"Opening to final balance",
+cats:"Categories",catsS:"Classify every entry",ccs:"Cost centers",ccsS:"Project, branch, vehicle",team:"Team review",teamS:"Reports sent to you",
+xlsAll:"Export all",xlsAllS:"Every entry to Excel",home:"Home",settings:"Settings",
+expenses:"Expenses",income:"Income",search:"Search entries…",noTx:"No entries yet. Record your first cash in or cash out.",noMatch:"No entry matches that search.",
+example:"Try with example entries",rmExample:"Remove example entries",exTag:"example",
+newAcc:"Create a new account",accName:"Account name",balance:"Balance",lastAct:"Last entry",never:"no entries",rename:"Rename",del:"Delete",delAgain:"Tap again to delete",
+accHasTx:"Delete its entries first.",save:"Save",cancel:"Cancel",amount:"Amount",desc:"Description",descPh:"What was it for?",date:"Date",cat:"Category",cc:"Cost center",account:"Account",none:"None",
+receipt:"Receipt photo",addReceipt:"Add receipt photo",changeReceipt:"Change photo",rmReceipt:"Remove photo",newOut:"New cash out",newIn:"New cash in",editTx:"Edit entry",
+needAmt:"Enter an amount above zero.",saved:"Saved",deleted:"Deleted",
+newRep:"Create a report",repTitle:"Report title",from:"From",to:"To",noRep:"No reports yet. A report covers one account over a period, with opening and final balance.",
+opening:"Opening balance",closing:"Final balance",totalIn:"Cash in",totalOut:"Cash out",lines:"Entries",pdf:"Export PDF",xls:"Export Excel",send:"Send to manager",resend:"Send again",
+draft:"Draft",submitted:"Sent for review",approved:"Approved",returned:"Returned",sent:"Report sent to the manager.",sendNeeds:"Sending works when you are signed in to the shared app.",
+mgrNote:"Manager note",noLines:"No entries in this period.",delRep:"Delete report",
+teamEmpty:"No reports have been sent for review yet.",approve:"Approve",ret:"Return with note",notePh:"Note for the custodian (optional)",by:"From",someone:"Team member",
+lang:"Language",currency:"Currency",org:"Organisation name",orgPh:"Shown on reports",add:"Add",
+teamHow:"Team",teamHowT:"Share this app from the Share menu. People you add as Contributor become custodians: each keeps their own private cash book and sends reports to you. You, as owner, review them under Team review.",
+storeDb:"Your entries are saved to your account and follow you across devices.",storeLocal:"Entries are saved in this browser only. Open the shared app signed in to keep them in your account.",
+loading:"Loading your cash book…",unreach:"Your data can't be reached yet. Check your connection.",retry:"Try again",
+saveFail:"Couldn't save. Check your connection and try again.",readOnly:"You have view-only access, so changes can't be saved.",quota:"Storage is full. Delete old entries or photos.",
+dlNo:"Downloads aren't available in this view.",dlFail:"The file couldn't be saved.",dlOk:"File saved",building:"Building file…",
+page:"Page",generated:"Generated",attachments:"Receipts",no:"#",in_:"In",out_:"Out",bal:"Balance",period:"Period",type:"Type",hasRec:"Receipt",yes:"Yes",
+defAcc:"Main petty cash",defCats:["Fuel","Transport","Meals","Office supplies","Maintenance","Shipping","Customer visit","Other"],defCcs:["General","Sales","Operations"],
+repDefault:"Petty cash report",collections:"Customer collections",collectionsS:"Cash you hold for the company",colHeld:"Customer cash you hold",collected:"Collected",paidOut:"Handed over or used",k_col:"Customer paid me",k_flt:"Took float",k_bank:"Sent to company by bank",k_goods:"Bought goods",k_sup:"Paid a supplier",customer:"Customer",supplier:"Supplier",shop:"Shop or supplier",ref:"Invoice or receipt no.",bankRef:"Transfer reference",note:"Note",toAcc:"Into float account",floatFrom:"Float taken from customer collections",noCol:"Nothing collected yet. Record a customer payment to start.",overCol:"Saved. This is more than the customer cash you hold.",held:"held",storeNative:"Entries are saved on this phone only. Make a backup file regularly and keep it somewhere safe.",backup:"Backup",backupBtn:"Save a backup file",restoreBtn:"Restore from a backup file",restoreT:"Restore backup",restoreQ:"This replaces everything in the app with the backup:",restoreGo:"Replace and restore",badBackup:"That file is not a Float Manager backup.",restored:"Backup restored",entriesN:"entries",photosN:"photos",dlNative:"Saved to Downloads / Float Manager",sharePdf:"Export PDF to share",exists:"Already in the list.",photoBig:"That photo couldn't be read. Try another."
+},ar:{
+app:"مدير العهدة",morning:"صباح الخير",afternoon:"مساء الخير",evening:"مساء الخير",
+heroT:"العهدة والمصروفات",inHand:"النقد المتوفر، كل الحسابات",cashOut:"صرف",cashIn:"قبض",
+tools:"الأدوات",recent:"آخر القيود",accounts:"الحسابات",accountsS:"رصيد كل صندوق",reports:"التقارير",reportsS:"من الرصيد الافتتاحي إلى النهائي",
+cats:"التصنيفات",catsS:"صنّف كل قيد",ccs:"مراكز التكلفة",ccsS:"مشروع، فرع، مركبة",team:"مراجعة الفريق",teamS:"التقارير المرسلة إليك",
+xlsAll:"تصدير الكل",xlsAllS:"كل القيود إلى إكسل",home:"الرئيسية",settings:"الإعدادات",
+expenses:"المصروفات",income:"المقبوضات",search:"ابحث في القيود…",noTx:"لا توجد قيود بعد. سجّل أول قبض أو صرف.",noMatch:"لا يوجد قيد مطابق.",
+example:"جرّب بقيود تجريبية",rmExample:"حذف القيود التجريبية",exTag:"تجريبي",
+newAcc:"إنشاء حساب جديد",accName:"اسم الحساب",balance:"الرصيد",lastAct:"آخر قيد",never:"لا قيود",rename:"إعادة تسمية",del:"حذف",delAgain:"اضغط مرة أخرى للحذف",
+accHasTx:"احذف قيوده أولاً.",save:"حفظ",cancel:"إلغاء",amount:"المبلغ",desc:"البيان",descPh:"لأي غرض؟",date:"التاريخ",cat:"التصنيف",cc:"مركز التكلفة",account:"الحساب",none:"بدون",
+receipt:"صورة الإيصال",addReceipt:"أضف صورة الإيصال",changeReceipt:"تغيير الصورة",rmReceipt:"حذف الصورة",newOut:"صرف جديد",newIn:"قبض جديد",editTx:"تعديل القيد",
+needAmt:"أدخل مبلغاً أكبر من صفر.",saved:"تم الحفظ",deleted:"تم الحذف",
+newRep:"إنشاء تقرير",repTitle:"عنوان التقرير",from:"من",to:"إلى",noRep:"لا توجد تقارير بعد. التقرير يغطي حساباً واحداً لفترة محددة مع الرصيد الافتتاحي والنهائي.",
+opening:"الرصيد الافتتاحي",closing:"الرصيد النهائي",totalIn:"المقبوضات",totalOut:"المصروفات",lines:"القيود",pdf:"تصدير PDF",xls:"تصدير إكسل",send:"إرسال للمدير",resend:"إعادة الإرسال",
+draft:"مسودة",submitted:"بانتظار المراجعة",approved:"معتمد",returned:"مُعاد",sent:"تم إرسال التقرير للمدير.",sendNeeds:"الإرسال يعمل عند تسجيل الدخول إلى التطبيق المشترك.",
+mgrNote:"ملاحظة المدير",noLines:"لا توجد قيود في هذه الفترة.",delRep:"حذف التقرير",
+teamEmpty:"لم يُرسل أي تقرير للمراجعة بعد.",approve:"اعتماد",ret:"إعادة مع ملاحظة",notePh:"ملاحظة لأمين العهدة (اختياري)",by:"من",someone:"عضو الفريق",
+lang:"اللغة",currency:"العملة",org:"اسم المنشأة",orgPh:"يظهر في التقارير",add:"إضافة",
+teamHow:"الفريق",teamHowT:"شارك هذا التطبيق من قائمة المشاركة. من تضيفهم بصلاحية مساهم يصبحون أمناء عهدة: لكل منهم دفتر نقدي خاص ويرسل تقاريره إليك. وأنت كمالك تراجعها في مراجعة الفريق.",
+storeDb:"قيودك محفوظة في حسابك وتظهر على كل أجهزتك.",storeLocal:"القيود محفوظة في هذا المتصفح فقط. افتح التطبيق المشترك وأنت مسجّل الدخول لحفظها في حسابك.",
+loading:"جارٍ تحميل دفتر النقدية…",unreach:"تعذّر الوصول إلى بياناتك. تحقق من الاتصال.",retry:"إعادة المحاولة",
+saveFail:"تعذّر الحفظ. تحقق من الاتصال وحاول مجدداً.",readOnly:"صلاحيتك للعرض فقط، لذا لا يمكن حفظ التغييرات.",quota:"المساحة ممتلئة. احذف قيوداً أو صوراً قديمة.",
+dlNo:"التنزيل غير متاح في هذا العرض.",dlFail:"تعذّر حفظ الملف.",dlOk:"تم حفظ الملف",building:"جارٍ إنشاء الملف…",
+page:"صفحة",generated:"أُنشئ في",attachments:"الإيصالات",no:"م",in_:"قبض",out_:"صرف",bal:"الرصيد",period:"الفترة",type:"النوع",hasRec:"إيصال",yes:"نعم",
+defAcc:"العهدة الرئيسية",defCats:["وقود","مواصلات","وجبات","لوازم مكتبية","صيانة","شحن","زيارة عميل","أخرى"],defCcs:["عام","المبيعات","العمليات"],
+repDefault:"تقرير العهدة",collections:"تحصيلات العملاء",collectionsS:"نقد تحتفظ به لصالح الشركة",colHeld:"نقد العملاء الذي بحوزتك",collected:"المحصَّل",paidOut:"المسلَّم أو المستخدم",k_col:"دفع لي العميل",k_flt:"أخذت عهدة",k_bank:"حوّلت للشركة عبر البنك",k_goods:"اشتريت بضاعة",k_sup:"دفعت لمورّد",customer:"العميل",supplier:"المورّد",shop:"المحل أو المورّد",ref:"رقم الفاتورة أو الإيصال",bankRef:"مرجع التحويل",note:"ملاحظة",toAcc:"إلى حساب العهدة",floatFrom:"عهدة مأخوذة من تحصيلات العملاء",noCol:"لا توجد تحصيلات بعد. سجّل دفعة عميل للبدء.",overCol:"تم الحفظ. المبلغ أكبر من نقد العملاء الذي بحوزتك.",held:"بحوزتك",storeNative:"القيود محفوظة على هذا الهاتف فقط. احفظ نسخة احتياطية بانتظام في مكان آمن.",backup:"النسخ الاحتياطي",backupBtn:"حفظ ملف نسخة احتياطية",restoreBtn:"استعادة من ملف نسخة احتياطية",restoreT:"استعادة النسخة",restoreQ:"سيُستبدل كل ما في التطبيق بالنسخة الاحتياطية:",restoreGo:"استبدال واستعادة",badBackup:"هذا الملف ليس نسخة احتياطية من مدير العهدة.",restored:"تمت الاستعادة",entriesN:"قيد",photosN:"صورة",dlNative:"حُفظ في التنزيلات / Float Manager",sharePdf:"تصدير PDF للمشاركة",exists:"موجود في القائمة.",photoBig:"تعذّرت قراءة الصورة. جرّب صورة أخرى."
+}};
+let S={main:null,months:{},tab:"home",sub:null,q:"",shared:{},team:null};
+const lang=()=>S.main?.lang||(navigator.language||"").startsWith("ar")&&"ar"||"en";
+const t=k=>T[lang()][k]??T.en[k]??k;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $=s=>document.querySelector(s);
+const uidGen=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const cur=()=>S.main?.cur||"SAR";
+function fmt(m){return (m/100).toLocaleString("en-US",{minimumFractionDigits:m%100?2:0,maximumFractionDigits:2})}
+function fmt2(m){return (m/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function parseAmt(s){s=String(s).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[٫]/g,".").replace(/[\s٬]/g,"");
+  if(s.includes(",")&&s.includes("."))s=s.replace(/,/g,"");else s=s.replace(",",".");
+  const n=Math.round(parseFloat(s)*100);return isFinite(n)&&n>0?n:0}
+function fdate(iso){if(!iso)return"";const [y,m,d]=iso.split("-").map(Number);
+  return new Date(y,m-1,d).toLocaleDateString(lang()==="ar"?"ar-EG-u-nu-latn":"en-GB",{day:"numeric",month:"short",year:"numeric"})}
+function toast(msg){const e=$("#toast");e.textContent=msg;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),2600)}
+const IC={
+home:'<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>',
+rep:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/>',
+gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+team:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c3 0 5 2 5 5"/>',
+wallet:'<path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V6a2 2 0 0 1 2-2h11"/><circle cx="16.5" cy="13.5" r="1.2"/>',
+tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+pin:'<path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/>',
+xls:'<path d="M4 4h16v16H4z"/><path d="M4 10h16M4 15h16M10 4v16"/>',
+back:'<path d="M15 5l-7 7 7 7"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',
+search:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
+clip:'<path d="M8 12l6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l7-7"/>',chev:'<path d="M9 5l7 7-7 7"/>',
+coin:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H15"/>'};
+const ic=(n,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+
+/* ---------- pure money logic ---------- */
+function rawTx(){const a=[];for(const k in S.months){const it=S.months[k].items||{};for(const id in it)a.push(it[id])}
+  return a.sort((x,y)=>y.date.localeCompare(x.date)||(y.ts||0)-(x.ts||0))}
+const allTx=()=>rawTx().filter(x=>x.acc!=="col"),colTx=()=>rawTx().filter(x=>x.acc==="col");
+function sums(list){let i=0,o=0;for(const x of list)x.type==="in"?i+=x.amt:o+=x.amt;return{in:i,out:o,bal:i-o}}
+function buildReport(rep,txs,main){
+  const mine=txs.filter(x=>x.acc===rep.acc);
+  const before=sums(mine.filter(x=>x.date<rep.from)).bal;
+  const inside=mine.filter(x=>x.date>=rep.from&&x.date<=rep.to).sort((a,b)=>a.date.localeCompare(b.date)||(a.ts||0)-(b.ts||0));
+  const s=sums(inside);
+  return{title:rep.title,org:main.org||"",accName:rep.acc==="col"?(T[main.lang]||T.en).collections:(main.accounts.find(a=>a.id===rep.acc)||{}).name||"",from:rep.from,to:rep.to,cur:main.cur||"SAR",lang:main.lang||"en",
+    opening:before,tin:s.in,tout:s.out,closing:before+s.bal,
+    lines:inside.map(x=>x.acc==="col"?{id:x.id,date:x.date,desc:[x.party,x.desc].filter(Boolean).join(" · "),cat:(T[main.lang]||T.en)["k_"+x.kind],cc:x.ref||"",type:x.type,amt:x.amt,att:!!x.att}:{id:x.id,date:x.date,desc:x.desc||"",cat:x.cat||"",cc:x.cc||"",type:x.type,amt:x.amt,att:!!x.att})}}
+
+/* ---------- storage ---------- */
+const NATIVE=!!window.Android;
+const IDB={db:null,
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open("floatmgr",1);r.onupgradeneeded=()=>{r.result.createObjectStore("kv");r.result.createObjectStore("att")};r.onsuccess=()=>{this.db=r.result;res()};r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error("blocked"))})},
+  run(store,mode,fn){return new Promise((res,rej)=>{const tx=this.db.transaction(store,mode),rq=fn(tx.objectStore(store));tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=tx.onabort=()=>rej(tx.error)})},
+  get(s,k){return this.run(s,"readonly",o=>o.get(k))},put(s,k,v){return this.run(s,"readwrite",o=>o.put(v,k))},del(s,k){return this.run(s,"readwrite",o=>o.delete(k))},
+  clear(s){return this.run(s,"readwrite",o=>o.clear())},
+  async all(s){const ks=await this.run(s,"readonly",o=>o.getAllKeys()),vs=await this.run(s,"readonly",o=>o.getAll()),out={};ks.forEach((k,i)=>out[k]=vs[i]);return out}};
+const Store={db:null,user:null,uid:null,mgr:false,chain:{},queued:{},
+  async init(){
+    let c=window.claude;for(let i=0;i<15&&!c;i++){await new Promise(r=>setTimeout(r,100));c=window.claude}
+    if(c&&c.use){try{[this.db,this.user]=await Promise.all([c.use("db"),c.use("user")])}catch(e){}}
+    if(this.user){try{this.uid=await this.user.id();this.mgr=!!(await this.user.canEdit())}catch(e){}}
+    if(!this.uid)this.db=null;
+    if(this.db)this.mainRef=this.db.doc("data/users/"+this.uid+"/main");
+    else{try{await IDB.open();this.idb=true}catch(e){this.idb=false}}},
+  async load(){
+    if(this.db){const m=await this.mainRef.get();S.main=m.exists?clone(m.data()):null;
+      const qs=await this.mainRef.collection("m").get();S.months={};qs.docs.forEach(d=>{S.months[d.id]=clone(d.data())});
+      try{const sh=await this.db.doc("reports/"+this.uid).collection("items").get();S.shared={};sh.docs.forEach(d=>{const x=d.data();S.shared[d.id]={status:x.status,note:x.note||""}})}catch(e){}
+    }else{let j=null;if(this.idb){try{j=await IDB.get("kv","state")}catch(e){}}
+      if(!j){try{j=JSON.parse(localStorage.getItem("fm1")||"null")}catch(e){}}
+      if(j){S.main=j.main;S.months=j.months||{}}}
+    if(!S.main){const L=T[lang()];S.main={v:1,lang:lang(),cur:"SAR",org:"",accounts:[{id:"a1",name:L.defAcc}],cats:[...L.defCats],ccs:[...L.defCcs],reports:[]};this.save("main")}},
+  save(key){
+    if(!this.db){const st=clone({main:S.main,months:S.months});if(this.idb)IDB.put("kv","state",st).catch(()=>toast(t("saveFail")));else{try{localStorage.setItem("fm1",JSON.stringify(st))}catch(e){toast(t("quota"))}}return}
+    if(this.queued[key])return;this.queued[key]=true;
+    this.chain[key]=(this.chain[key]||Promise.resolve()).then(()=>{this.queued[key]=false;
+      if(key==="main")return this.mainRef.set(clone(S.main));
+      const k=key.slice(2),ref=this.mainRef.collection("m").doc(k),mo=S.months[k];
+      return mo&&Object.keys(mo.items).length?ref.set(clone(mo)):ref.delete()}).catch(e=>this.fail(e))},
+  fail(e){const c=e&&e.code;toast(c==="invalid_argument"?t("readOnly"):c==="quota_exceeded"?t("quota"):t("saveFail"))},
+  async putAtt(id,data){if(this.db)await this.mainRef.collection("att").doc(id).set({d:data});else if(this.idb)await IDB.put("att",id,data);else localStorage.setItem("fm1a:"+id,data)},
+  async getAtt(id){try{if(this.db){const s=await this.mainRef.collection("att").doc(id).get();return s.exists?s.data().d:null}if(this.idb)return(await IDB.get("att",id))||null;return localStorage.getItem("fm1a:"+id)}catch(e){return null}},
+  async delAtt(id){try{if(this.db)await this.mainRef.collection("att").doc(id).delete();else if(this.idb)await IDB.del("att",id);else localStorage.removeItem("fm1a:"+id)}catch(e){}},
+  async submit(rid,R){
+    const base=this.db.doc("reports/"+this.uid);await base.set({updatedAt:new Date().toISOString()});
+    const ref=base.collection("items").doc(rid);
+    await ref.set({...R,status:"submitted",note:"",submittedAt:new Date().toISOString()});
+    for(const l of R.lines)if(l.att){const d=await this.getAtt(l.id);if(d)await ref.collection("att").doc(l.id).set({d})}},
+  async loadTeam(){const out=[];const idx=await this.db.collection("reports").get();
+    for(const u of idx.docs){const qs=await this.db.doc("reports/"+u.id).collection("items").get();qs.docs.forEach(d=>out.push({uid:u.id,rid:d.id,...clone(d.data())}))}
+    out.sort((a,b)=>(b.submittedAt||"").localeCompare(a.submittedAt||""));
+    let names={};try{names=await this.user.profiles([...new Set(out.map(o=>o.uid))])}catch(e){}
+    out.forEach(o=>o.byName=(names[o.uid]&&names[o.uid].name)||"");return out},
+  async review(uid,rid,patch){await this.db.doc("reports/"+uid).collection("items").doc(rid).update(patch)},
+  async teamAtt(uid,rid,id){try{const s=await this.db.doc("reports/"+uid).collection("items").doc(rid).collection("att").doc(id).get();return s.exists?s.data().d:null}catch(e){return null}}
+};
+function putTx(x){const k=x.date.slice(0,7);(S.months[k]=S.months[k]||{items:{}}).items[x.id]=x;Store.save("m:"+k)}
+function dropTx(x){const k=x.date.slice(0,7);if(S.months[k]){delete S.months[k].items[x.id];Store.save("m:"+k)}}
+const findTx=id=>rawTx().find(x=>x.id===id);
+
+/* ---------- rendering ---------- */
+function setDir(){document.documentElement.lang=lang();document.documentElement.dir=lang()==="ar"?"rtl":"ltr"}
+function render(){setDir();const v=S.sub?S.sub.v:S.tab;
+  const titles={accounts:t("accounts"),reports:t("reports"),team:t("team"),prefs:t("settings"),col:t("collections"),acc:"",report:"",treport:""};
+  if(v==="home"){const h=new Date().getHours();$("#top").innerHTML=`<div class="mark">${ic("coin",18)}</div><h1>${t(h<12?"morning":h<18?"afternoon":"evening")}</h1>`}
+  else{const ttl=v==="acc"?accName(S.sub.id):v==="report"||v==="treport"?t("reports"):titles[v];
+    $("#top").innerHTML=`<button class="iconbtn flip" data-a="back" aria-label="Back">${ic("back",20)}</button><h1>${esc(ttl)}</h1>`}
+  $("#view").innerHTML=(V[v]||V.home)();$("#view").scrollTop=0;
+  const tabs=[["home","home",t("home")],["reports","rep",t("reports")]];if(Store.mgr&&Store.db)tabs.push(["team","team",t("team")]);tabs.push(["prefs","gear",t("settings")]);
+  $("#nav").innerHTML=tabs.map(([k,i,l])=>`<button data-a="tab" data-k="${k}" class="${S.tab===k?"on":""}"><span class="ic">${ic(i,19)}</span>${esc(l)}</button>`).join("")}
+const accName=id=>id==="col"?t("collections"):(S.main.accounts.find(a=>a.id===id)||{}).name||"";
+function txRow(x,showAcc){const meta=[fdate(x.date),x.cat,x.cc,showAcc?accName(x.acc):""].filter(Boolean).map(esc).join(" · ");
+  return `<button class="row" data-a="editTx" data-id="${x.id}"><div class="g"><div class="t">${esc(x.desc||(x.type==="in"?t("cashIn"):t("cashOut")))}${x.ex?` <span class="tag st-draft">${t("exTag")}</span>`:""}</div><div class="s">${meta}${x.att?" · "+ic("clip",12):""}</div></div><div class="amt ${x.type}">${fmt(x.amt)}</div></button>`}
+const V={
+home(){const tx=allTx(),s=sums(tx);
+  const tool=(a,i,c,l,sm)=>`<button class="tool" data-a="${a}"><span class="tic ${c}">${ic(i)}</span><span>${esc(l)}<small>${esc(sm)}</small></span></button>`;
+  return `<section class="hero"><div class="ttl">${t("heroT")}</div><div class="lbl">${t("inHand")}</div><div class="big">${fmt(s.bal)} <small>${esc(cur())}</small></div>
+  <div class="pills"><button class="pill" data-a="newTx" data-type="out">${ic("minus",14)}${t("cashOut")}</button><button class="pill" data-a="newTx" data-type="in">${ic("plus",14)}${t("cashIn")}</button></div></section>
+  ${Store.db||NATIVE?"":`<div class="note warn">${t("storeLocal")}</div>`}
+  <div class="sec">${t("tools")}</div><div class="grid">
+  ${tool("goCol","coin","c-teal",t("collections"),fmt(sums(colTx()).bal)+" "+cur()+" "+t("held"))}${tool("goAccounts","wallet","c-green",t("accounts"),t("accountsS"))}${tool("goReports","rep","c-blue",t("reports"),t("reportsS"))}
+  ${tool("goCats","tag","c-violet",t("cats"),t("catsS"))}${tool("goCcs","pin","c-amber",t("ccs"),t("ccsS"))}
+  ${Store.mgr&&Store.db?tool("goTeam","team","c-red",t("team"),t("teamS")):""}${tool("xlsAll","xls","c-blue",t("xlsAll"),t("xlsAllS"))}</div>
+  <div class="sec">${t("recent")}</div>
+  ${tx.length?`<div class="list">${tx.slice(0,6).map(x=>txRow(x,S.main.accounts.length>1)).join("")}</div>`:`<div class="card empty">${t("noTx")}<button class="btn soft" data-a="seed">${t("example")}</button></div>`}`},
+col(){const m=colTx(),s=sums(m),kb=(k,i,c)=>`<button class="tool" data-a="newCol" data-kind="${k}" style="min-height:0;gap:10px"><span class="tic ${c}">${ic(i)}</span><span>${t("k_"+k)}</span></button>`;
+  return `<div class="card bal"><div class="n">${t("colHeld")}</div><div class="v ${s.bal<0?"out":""}">${fmt(s.bal)} <small style="font-size:14px;color:var(--mid)">${esc(cur())}</small></div><div class="split"><div><span>${t("collected")}</span><b class="in">${fmt(s.in)}</b></div><div><span>${t("paidOut")}</span><b class="out">${fmt(s.out)}</b></div></div></div>
+  <button class="btn green block" data-a="newCol" data-kind="col">${ic("plus")}${t("k_col")}</button>
+  <div class="grid">${kb("flt","wallet","c-green")}${kb("bank","pin","c-blue")}${kb("goods","tag","c-violet")}${kb("sup","team","c-amber")}</div>
+  <label class="search">${ic("search")}<input id="cq" type="search" placeholder="${t("search")}" value="${esc(S.q)}" autocomplete="off"></label>
+  <div class="list" id="collist">${colList(m)}</div>`},
+accounts(){const tx=allTx();
+  return `<button class="btn green block" data-a="newAcc">${ic("plus")}${t("newAcc")}</button><div class="list">${S.main.accounts.map(a=>{const m=tx.filter(x=>x.acc===a.id),s=sums(m);
+  return `<button class="row" data-a="openAcc" data-id="${a.id}"><div class="g"><div class="t">${esc(a.name)}</div><div class="s">${t("balance")}</div><div class="amt ${s.bal<0?"out":"in"}" style="font-size:20px">${fmt(s.bal)}</div><div class="s">${t("lastAct")}: ${m[0]?fdate(m[0].date):t("never")}</div></div><span class="flip" style="color:var(--muted)">${ic("chev")}</span></button>`}).join("")}</div>`},
+acc(){const id=S.sub.id,m=allTx().filter(x=>x.acc===id),s=sums(m);
+  return `<div class="card bal"><div class="n">${esc(accName(id))}</div><div class="v">${fmt(s.bal)}</div><div class="split"><div><span>${t("expenses")}</span><b class="out">${fmt(s.out)}</b></div><div><span>${t("income")}</span><b class="in">${fmt(s.in)}</b></div></div></div>
+  <div class="duo"><button class="btn red" data-a="newTx" data-type="out" data-acc="${id}">${t("cashOut")}<span class="circ">${ic("minus",14)}</span></button><button class="btn green" data-a="newTx" data-type="in" data-acc="${id}">${t("cashIn")}<span class="circ">${ic("plus",14)}</span></button></div>
+  <label class="search">${ic("search")}<input id="q" type="search" placeholder="${t("search")}" value="${esc(S.q)}" autocomplete="off"></label>
+  <div class="list" id="txlist">${accList(m)}</div>
+  <div class="duo"><button class="btn ghost" data-a="renameAcc" data-id="${id}">${t("rename")}</button><button class="btn ghost" data-a="delAcc" data-id="${id}" style="color:var(--red)">${t("del")}</button></div>`},
+reports(){const tx=rawTx();
+  return `<button class="btn green block" data-a="newRep">${ic("plus")}${t("newRep")}</button>${S.main.reports.length?`<div class="list">${S.main.reports.slice().reverse().map(r=>{const R=buildReport(r,tx,S.main),st=repStatus(r);
+  return `<button class="row" data-a="openRep" data-id="${r.id}"><div class="g"><div class="t">${esc(r.title)}</div><div class="s">${esc(R.accName)} · ${fdate(r.from)} – ${fdate(r.to)}</div><div class="s"><span class="tag st-${st}">${t(st)}</span></div></div><div class="amt">${fmt(R.closing)}</div></button>`}).join("")}</div>`:`<div class="card empty">${t("noRep")}</div>`}`},
+report(){const r=S.main.reports.find(x=>x.id===S.sub.id);if(!r)return"";const R=buildReport(r,rawTx(),S.main),st=repStatus(r),sh=S.shared[r.id];
+  return reportBody(R,st,sh&&sh.note)+`<div class="duo"><button class="btn ghost" data-a="pdf">${t("pdf")}</button><button class="btn ghost" data-a="xls">${t("xls")}</button></div>
+  ${!Store.db||st==="submitted"||st==="approved"?"":`<button class="btn green block" data-a="sendRep" ${R.lines.length?"":"disabled"}>${t(st==="returned"?"resend":"send")}</button>`}
+  <button class="btn ghost block" data-a="delRep" style="color:var(--red)">${t("delRep")}</button>`},
+team(){if(!S.team){loadTeam();return `<div class="card empty">${t("loading")}</div>`}
+  return S.team.length?`<div class="list">${S.team.map((R,i)=>`<button class="row" data-a="openTeam" data-i="${i}"><div class="g"><div class="t">${esc(R.title)}</div><div class="s">${t("by")}: ${esc(R.byName||t("someone"))} · ${esc(R.accName)}</div><div class="s">${fdate(R.from)} – ${fdate(R.to)} · <span class="tag st-${esc(R.status)}">${t(R.status)}</span></div></div><div class="amt">${fmt(R.closing)}</div></button>`).join("")}</div>`:`<div class="card empty">${t("teamEmpty")}</div>`},
+treport(){const R=S.team[S.sub.i];
+  return `<div class="note">${t("by")}: <b>${esc(R.byName||t("someone"))}</b></div>`+reportBody(R,R.status,R.note)+`<div class="duo"><button class="btn ghost" data-a="pdf">${t("pdf")}</button><button class="btn ghost" data-a="xls">${t("xls")}</button></div>
+  <label class="f" for="mnote">${t("mgrNote")}<textarea class="inp" id="mnote" rows="2" placeholder="${t("notePh")}">${esc(R.note||"")}</textarea></label>
+  <div class="duo"><button class="btn red" data-a="review" data-s="returned">${t("ret")}</button><button class="btn green" data-a="review" data-s="approved">${t("approve")}</button></div>`},
+prefs(){const m=S.main,chips=(arr,k)=>`<div class="chips">${arr.map((c,i)=>`<span class="chip">${esc(c)}<button data-a="rmItem" data-k="${k}" data-i="${i}" aria-label="${t("del")}">×</button></span>`).join("")}</div>
+  <form class="inline" data-form="addItem" data-k="${k}"><input class="inp" id="add-${k}" name="v" maxlength="40" autocomplete="off"><button class="btn soft">${t("add")}</button></form>`;
+  return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+  <div class="f">${t("lang")}<div class="seg"><button class="n ${lang()==="en"?"on":""}" data-a="lang" data-l="en">English</button><button class="n ${lang()==="ar"?"on":""}" data-a="lang" data-l="ar">العربية</button></div></div>
+  <label class="f" for="p-cur">${t("currency")}<input class="inp" id="p-cur" data-set="cur" value="${esc(m.cur)}" maxlength="6"></label>
+  <label class="f" for="p-org">${t("org")}<input class="inp" id="p-org" data-set="org" value="${esc(m.org)}" placeholder="${t("orgPh")}" maxlength="60"></label></div>
+  <div class="sec" id="sec-cats">${t("cats")}</div><div class="card" style="display:flex;flex-direction:column;gap:12px">${chips(m.cats,"cats")}</div>
+  <div class="sec" id="sec-ccs">${t("ccs")}</div><div class="card" style="display:flex;flex-direction:column;gap:12px">${chips(m.ccs,"ccs")}</div>
+  ${NATIVE?"":`<div class="sec">${t("teamHow")}</div><div class="note">${t("teamHowT")}</div>`}
+  ${Store.db?"":`<div class="sec">${t("backup")}</div><button class="btn ghost block" data-a="backup">${t("backupBtn")}</button><label class="btn ghost block" style="cursor:pointer">${t("restoreBtn")}<input type="file" id="f-restore" accept="application/json,.json" hidden></label>`}
+  <div class="note ${Store.db?"":"warn"}">${t(Store.db?"storeDb":NATIVE?"storeNative":"storeLocal")}</div>
+  ${allTx().some(x=>x.ex)?`<button class="btn ghost block" data-a="rmSeed">${t("rmExample")}</button>`:""}`}
+};
+function accList(m){const q=S.q.trim().toLowerCase();const f=q?m.filter(x=>[x.desc,x.cat,x.cc,fmt(x.amt)].join(" ").toLowerCase().includes(q)):m;
+  return f.length?f.map(x=>txRow(x)).join(""):`<div class="card empty">${t(m.length?"noMatch":"noTx")}</div>`}
+function colRow(x){const meta=[fdate(x.date),x.ref,x.kind==="flt"?accName(x.to):"",x.desc].filter(Boolean).map(esc).join(" · ");
+  return `<button class="row" data-a="editTx" data-id="${x.id}"><div class="g"><div class="t">${esc(x.party||t("k_"+x.kind))}</div><div class="s">${x.party?esc(t("k_"+x.kind))+" · ":""}${meta}${x.att?" · "+ic("clip",12):""}</div></div><div class="amt ${x.type}">${x.type==="in"?"+":"−"}${fmt(x.amt)}</div></button>`}
+function colList(m){const q=S.q.trim().toLowerCase();const f=q?m.filter(x=>[x.party,x.ref,x.desc,t("k_"+x.kind),fmt(x.amt)].join(" ").toLowerCase().includes(q)):m;
+  return f.length?f.map(colRow).join(""):`<div class="card empty">${t(m.length?"noMatch":"noCol")}</div>`}
+function repStatus(r){const sh=S.shared[r.id];return sh?sh.status:"draft"}
+function reportBody(R,st,note){let run=R.opening;
+  return `<div class="card"><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><b style="font-size:16px">${esc(R.title)}</b><div class="s" style="color:var(--muted);font-size:12.5px">${esc(R.accName)} · ${fdate(R.from)} – ${fdate(R.to)}</div></div><span class="tag st-${esc(st)}">${t(st)}</span></div></div>
+  ${note?`<div class="note warn"><b>${t("mgrNote")}:</b> ${esc(note)}</div>`:""}
+  <div class="tiles"><div class="tile"><span>${t("opening")}</span><b>${fmt(R.opening)}</b></div><div class="tile"><span>${t("closing")}</span><b>${fmt(R.closing)}</b></div><div class="tile g"><span>${t("totalIn")}</span><b>${fmt(R.tin)}</b></div><div class="tile r"><span>${t("totalOut")}</span><b>${fmt(R.tout)}</b></div></div>
+  <div class="card scroll">${R.lines.length?`<table class="lines"><thead><tr><th>${t("date")}</th><th>${t("desc")}</th><th class="num">${t("amount")}</th><th class="num">${t("bal")}</th></tr></thead><tbody>${R.lines.map(l=>{run+=l.type==="in"?l.amt:-l.amt;
+    return `<tr><td style="white-space:nowrap">${fdate(l.date)}</td><td>${esc(l.desc)}<div style="color:var(--muted);font-size:11.5px">${[l.cat,l.cc].filter(Boolean).map(esc).join(" · ")}${l.att?" "+ic("clip",11):""}</div></td><td class="num ${l.type}">${l.type==="in"?"+":"−"}${fmt(l.amt)}</td><td class="num">${fmt(run)}</td></tr>`}).join("")}</tbody></table>`:`<div class="empty">${t("noLines")}</div>`}</div>`}
+async function loadTeam(){try{S.team=await Store.loadTeam()}catch(e){S.team=[]}if(S.tab==="team"&&!S.sub)render()}
+
+/* ---------- sheets ---------- */
+let sheetState=null;
+function openSheet(title,body){$("#sheet").innerHTML=`<div class="box" role="dialog" aria-modal="true"><div class="hd"><h2>${esc(title)}</h2><button class="iconbtn" data-a="closeSheet" aria-label="Close">${ic("x")}</button></div>${body}</div>`;$("#sheet").hidden=false}
+function closeSheet(){$("#sheet").hidden=true;$("#sheet").innerHTML="";sheetState=null}
+const opts=(arr,sel)=>`<option value="">${t("none")}</option>`+arr.map(c=>`<option ${c===sel?"selected":""}>${esc(c)}</option>`).join("");
+function txSheet(x,isNew){sheetState={x:clone(x),isNew,att:undefined};
+  const m=S.main;if(x.cat&&!m.cats.includes(x.cat))m.cats=[...m.cats,x.cat];
+  openSheet(isNew?t(x.type==="in"?"newIn":"newOut"):t("editTx"),`<form data-form="tx" style="display:flex;flex-direction:column;gap:12px">
+  <div class="seg"><button type="button" class="o ${x.type==="out"?"on":""}" data-a="txType" data-type="out">${t("cashOut")}</button><button type="button" class="i ${x.type==="in"?"on":""}" data-a="txType" data-type="in">${t("cashIn")}</button></div>
+  <label class="f" for="f-amt">${t("amount")} (${esc(cur())})<input class="inp amtinp" id="f-amt" name="amt" inputmode="decimal" autocomplete="off" placeholder="0" value="${x.amt?x.amt/100:""}"></label>
+  <label class="f" for="f-desc">${t("desc")}<input class="inp" id="f-desc" name="desc" maxlength="120" placeholder="${t("descPh")}" value="${esc(x.desc||"")}" autocomplete="off"></label>
+  <div class="duo"><label class="f" for="f-date">${t("date")}<input class="inp" id="f-date" name="date" type="date" value="${x.date}" required></label>
+  <label class="f" for="f-acc">${t("account")}<select class="inp" id="f-acc" name="acc">${m.accounts.map(a=>`<option value="${a.id}" ${a.id===x.acc?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label></div>
+  <div class="duo"><label class="f" for="f-cat">${t("cat")}<select class="inp" id="f-cat" name="cat">${opts(m.cats,x.cat)}</select></label>
+  <label class="f" for="f-cc">${t("cc")}<select class="inp" id="f-cc" name="cc">${opts(m.ccs,x.cc)}</select></label></div>
+  <div class="f">${t("receipt")}<div id="attbox"></div></div>
+  <button class="btn green block">${t("save")}</button>
+  ${isNew?"":`<button type="button" class="btn ghost block" data-a="delTx" style="color:var(--red)">${t("del")}</button>`}</form>`);
+  drawAtt(x.att?"load":null);if(isNew)$("#f-amt").focus()}
+async function drawAtt(src){const b=$("#attbox");if(!b)return;
+  if(src==="load"){b.innerHTML=`<div class="note">…</div>`;src=await Store.getAtt(sheetState.x.id);if(!$("#attbox"))return}
+  b.innerHTML=(src?`<img class="thumb" src="${src}" alt="${t("receipt")}">`:"")+`<div class="inline" style="margin-top:${src?8:0}px"><label class="attach" style="flex:1">${ic("clip",15)} ${t(src?"changeReceipt":"addReceipt")}<input type="file" accept="image/*" id="f-att" hidden></label>${src?`<button type="button" class="btn ghost" data-a="rmAtt">${t("rmReceipt")}</button>`:""}</div>`}
+function colSheet(x,isNew){sheetState={x:clone(x),isNew,att:undefined};const k=x.kind,m=S.main;
+  const names=[...new Set(colTx().filter(y=>y.kind===k&&y.party).map(y=>y.party))];
+  const pl=k==="col"?t("customer"):k==="goods"?t("shop"):t("supplier");
+  openSheet(t("k_"+k),`<form data-form="col" style="display:flex;flex-direction:column;gap:12px">
+  <label class="f" for="f-amt">${t("amount")} (${esc(cur())})<input class="inp amtinp" id="f-amt" name="amt" inputmode="decimal" autocomplete="off" placeholder="0" value="${x.amt?x.amt/100:""}"></label>
+  ${k==="flt"?`<label class="f" for="c-to">${t("toAcc")}<select class="inp" id="c-to" name="to">${m.accounts.map(a=>`<option value="${a.id}" ${a.id===x.to?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label>`:""}
+  ${k==="flt"||k==="bank"?"":`<label class="f" for="c-party">${esc(pl)}<input class="inp" id="c-party" name="party" maxlength="80" list="c-names" value="${esc(x.party||"")}" autocomplete="off"><datalist id="c-names">${names.map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist></label>`}
+  <div class="duo"><label class="f" for="f-date">${t("date")}<input class="inp" id="f-date" name="date" type="date" value="${x.date}" required></label>
+  ${k==="flt"?"<span></span>":`<label class="f" for="c-ref">${t(k==="bank"?"bankRef":"ref")}<input class="inp" id="c-ref" name="ref" maxlength="40" value="${esc(x.ref||"")}" autocomplete="off"></label>`}</div>
+  <label class="f" for="f-desc">${t("note")}<input class="inp" id="f-desc" name="desc" maxlength="120" value="${esc(x.desc||"")}" autocomplete="off"></label>
+  <div class="f">${t("receipt")}<div id="attbox"></div></div>
+  <button class="btn green block">${t("save")}</button>
+  ${isNew?"":`<button type="button" class="btn ghost block" data-a="delCol" style="color:var(--red)">${t("del")}</button>`}</form>`);
+  drawAtt(x.att?"load":null);if(isNew)$("#f-amt").focus()}
+function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
+  let sc=Math.min(1,1100/Math.max(im.width,im.height)),q=.72,out;
+  for(let i=0;i<6;i++){const c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);out=c.toDataURL("image/jpeg",q);if(out.length<180000)break;q-=.1;sc*=.82}
+  res(out)};im.src=r.result};r.readAsDataURL(file)})}
+function simpleSheet(title,label,val,cb){sheetState={cb};openSheet(title,`<form data-form="simple" style="display:flex;flex-direction:column;gap:12px"><label class="f" for="s-v">${esc(label)}<input class="inp" id="s-v" name="v" value="${esc(val)}" maxlength="50" required autocomplete="off"></label><button class="btn green block">${t("save")}</button></form>`);$("#s-v").focus()}
+function repSheet(){const d=today(),m=S.main,mon=new Date().toLocaleDateString(lang()==="ar"?"ar-EG-u-nu-latn":"en-GB",{month:"long",year:"numeric"});
+  openSheet(t("newRep"),`<form data-form="rep" style="display:flex;flex-direction:column;gap:12px">
+  <label class="f" for="r-t">${t("repTitle")}<input class="inp" id="r-t" name="title" value="${esc(t("repDefault")+" "+mon)}" maxlength="80" required></label>
+  <label class="f" for="r-a">${t("account")}<select class="inp" id="r-a" name="acc">${m.accounts.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("")}<option value="col">${t("collections")}</option></select></label>
+  <div class="duo"><label class="f" for="r-f">${t("from")}<input class="inp" id="r-f" name="from" type="date" value="${d.slice(0,8)}01" required></label><label class="f" for="r-to">${t("to")}<input class="inp" id="r-to" name="to" type="date" value="${d}" required></label></div>
+  <button class="btn green block">${t("newRep")}</button></form>`)}
+
+/* ---------- exports ---------- */
+function currentR(){if(S.sub&&S.sub.v==="treport"){const R=S.team[S.sub.i];return{R,get:id=>Store.teamAtt(R.uid,R.rid,id)}}
+  const r=S.main.reports.find(x=>x.id===S.sub.id);return{R:buildReport(r,rawTx(),S.main),get:id=>Store.getAtt(id)}}
+async function nativeSave(name,blob){const buf=new Uint8Array(await blob.arrayBuffer()),N=3*150000;Android.fileBegin(name);
+  for(let i=0;i<buf.length;i+=N){let bin="";const part=buf.subarray(i,i+N);for(let j=0;j<part.length;j+=8192)bin+=String.fromCharCode.apply(null,part.subarray(j,j+8192));Android.fileChunk(btoa(bin))}
+  Android.fileEnd()}
+async function saveFile(name,blob){
+  if(NATIVE){try{await nativeSave(name,blob);toast(t("dlNative"))}catch(e){toast(t("dlFail"))}return}
+  let d=null;if(window.claude&&claude.use){try{d=await claude.use("downloads")}catch(e){}}
+  if(d){try{await d.save({filename:name,data:blob});toast(t("dlOk"))}catch(e){if(!e||e.code!=="declined")toast(t(e&&e.code==="unavailable"?"dlNo":"dlFail"))}}
+  else if(!window.claude){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();toast(t("dlOk"))}
+  else toast(t("dlNo"))}
+const fileSafe=s=>(s||"report").replace(/[\\/:*?"<>|]+/g," ").trim().slice(0,60)||"report";
+function exportXlsx(R){if(!window.XLSX){toast(t("dlNo"));return}
+  let run=R.opening;const rows=[[R.title],[R.org],[t("account"),R.accName],[t("period"),R.from+" → "+R.to],[t("currency"),R.cur],[],
+   [t("opening"),R.opening/100],[t("totalIn"),R.tin/100],[t("totalOut"),R.tout/100],[t("closing"),R.closing/100],[],
+   [t("no"),t("date"),t("desc"),t("cat"),t("cc"),t("in_"),t("out_"),t("bal"),t("hasRec")]];
+  R.lines.forEach((l,i)=>{run+=l.type==="in"?l.amt:-l.amt;rows.push([i+1,l.date,l.desc,l.cat,l.cc,l.type==="in"?l.amt/100:"",l.type==="out"?l.amt/100:"",run/100,l.att?t("yes"):""])});
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=[{wch:16},{wch:14},{wch:36},{wch:18},{wch:18},{wch:12},{wch:12},{wch:14},{wch:9}];
+  const wb=XLSX.utils.book_new();if(R.lang==="ar"||lang()==="ar")wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,"Report");
+  saveFile(fileSafe(R.title)+".xlsx",new Blob([XLSX.write(wb,{type:"array",bookType:"xlsx"})]))}
+function exportAll(){const tx=allTx().reverse(),ct=colTx().reverse();if(!tx.length&&!ct.length){toast(t("noTx"));return}if(!window.XLSX){toast(t("dlNo"));return}
+  const rows=[[t("date"),t("account"),t("type"),t("desc"),t("cat"),t("cc"),t("in_"),t("out_"),t("hasRec")]];
+  tx.forEach(l=>rows.push([l.date,accName(l.acc),t(l.type==="in"?"cashIn":"cashOut"),l.desc||"",l.cat||"",l.cc||"",l.type==="in"?l.amt/100:"",l.type==="out"?l.amt/100:"",l.att?t("yes"):""]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=[{wch:12},{wch:20},{wch:10},{wch:36},{wch:18},{wch:18},{wch:12},{wch:12},{wch:9}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Entries");
+  const cr=[[t("date"),t("type"),t("customer")+" / "+t("supplier"),t("ref"),t("note"),t("in_"),t("out_"),t("hasRec")]];
+  ct.forEach(l=>cr.push([l.date,t("k_"+l.kind),l.party||(l.kind==="flt"?accName(l.to):""),l.ref||"",l.desc||"",l.type==="in"?l.amt/100:"",l.type==="out"?l.amt/100:"",l.att?t("yes"):""]));
+  const cs=XLSX.utils.aoa_to_sheet(cr);cs["!cols"]=[{wch:12},{wch:24},{wch:26},{wch:18},{wch:30},{wch:12},{wch:12},{wch:9}];XLSX.utils.book_append_sheet(wb,cs,"Collections");
+  saveFile("float-manager-entries-"+today()+".xlsx",new Blob([XLSX.write(wb,{type:"array",bookType:"xlsx"})]))}
+async function exportPdf(R,getAtt){
+  if(!window.jspdf){toast(t("dlNo"));return}toast(t("building"));
+  const W=1240,H=1754,rtl=lang()==="ar",F='"Segoe UI",Tahoma,"IBM Plex Sans Arabic",Arial,sans-serif',pages=[];
+  const X=x=>rtl?W-x:x;
+  const page=()=>{const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,W,H);g.textBaseline="middle";g.direction=rtl?"rtl":"ltr";pages.push(c);return g};
+  const fit=(g,s,max)=>{s=String(s);if(g.measureText(s).width<=max)return s;while(s.length>1&&g.measureText(s+"…").width>max)s=s.slice(0,-1);return s+"…"};
+  const tx=(g,s,x,y,o={})=>{g.font=`${o.w||400} ${o.s||21}px ${F}`;g.fillStyle=o.c||"#17201f";g.textAlign=o.a||"start";g.fillText(o.max?fit(g,s,o.max):String(s),X(x),y)};
+  const box=(g,x,y,w,h,fill)=>{g.fillStyle=fill;g.fillRect(rtl?W-x-w:x,y,w,h)};
+  const cols=[[70,40,t("no")],[115,130,t("date")],[250,300,t("desc")],[555,150,t("cat")],[710,130,t("cc")]],nums=[[950,t("in_")],[1060,t("out_")],[1170,t("bal")]];
+  const head=(g,y)=>{box(g,60,y-22,1120,44,"#0c474b");cols.forEach(c=>tx(g,c[2],c[0],y,{w:700,s:18,c:"#fff"}));nums.forEach(n=>tx(g,n[1],n[0],y,{w:700,s:18,c:"#fff",a:"end"}))};
+  let g=page();
+  box(g,0,0,W,150,"#0c474b");tx(g,R.title,70,62,{w:700,s:34,c:"#f0dba6",max:1100});tx(g,[R.org,R.accName].filter(Boolean).join("  ·  "),70,112,{s:21,c:"#fff",max:1100});
+  tx(g,t("period")+": "+fdate(R.from)+" – "+fdate(R.to)+"   ·   "+t("currency")+": "+R.cur,70,195,{s:21,c:"#5c6462"});
+  [[t("opening"),R.opening,"#f4eee9","#17201f"],[t("totalIn"),R.tin,"#e3f4eb","#12955a"],[t("totalOut"),R.tout,"#fde9e9","#e23a3f"],[t("closing"),R.closing,"#f4eee9","#17201f"]].forEach((b,i)=>{
+    const x=60+i*285;box(g,x,240,265,120,b[2]);tx(g,b[0],x+18,275,{s:18,c:"#5c6462"});tx(g,fmt2(b[1]),x+18,322,{w:700,s:30,c:b[3]})});
+  let y=420,run=R.opening,rowsLeft=28;head(g,y);y+=44;
+  R.lines.forEach((l,i)=>{if(!rowsLeft){g=page();y=110;head(g,y);y+=44;rowsLeft=36}
+    run+=l.type==="in"?l.amt:-l.amt;if(i%2)box(g,60,y-21,1120,42,"#faf6f3");
+    [i+1,fdate(l.date),l.desc+(l.att?" 📎":""),l.cat,l.cc].forEach((v,k)=>tx(g,v,cols[k][0],y,{s:19,max:cols[k][1]-10}));
+    if(l.type==="in")tx(g,fmt2(l.amt),950,y,{s:19,a:"end",c:"#12955a"});else tx(g,fmt2(l.amt),1060,y,{s:19,a:"end",c:"#e23a3f"});
+    tx(g,fmt2(run),1170,y,{s:19,a:"end",w:600});y+=42;rowsLeft--});
+  if(!R.lines.length)tx(g,t("noLines"),70,y+10,{s:20,c:"#8b8f8d"});
+  else{box(g,60,y-21,1120,46,"#f4eee9");tx(g,t("closing"),250,y+2,{w:700,s:20});tx(g,fmt2(R.tin),950,y+2,{w:700,s:19,a:"end",c:"#12955a"});tx(g,fmt2(R.tout),1060,y+2,{w:700,s:19,a:"end",c:"#e23a3f"});tx(g,fmt2(R.closing),1170,y+2,{w:700,s:19,a:"end"})}
+  const withAtt=R.lines.map((l,i)=>({l,n:i+1})).filter(o=>o.l.att);let slot=0;
+  for(const o of withAtt){const d=await getAtt(o.l.id);if(!d)continue;
+    const im=await new Promise(r=>{const m=new Image();m.onload=()=>r(m);m.onerror=()=>r(null);m.src=d});if(!im)continue;
+    if(slot%4===0){g=page();tx(g,t("attachments"),70,80,{w:700,s:30,c:"#0c474b"})}
+    const cx=70+(slot%2)*560,cy=140+Math.floor(slot%4/2)*790;
+    tx(g,"#"+o.n+"  "+fdate(o.l.date)+"  ·  "+fmt2(o.l.amt)+"  ·  "+o.l.desc,cx,cy+18,{s:18,w:600,max:530});
+    const sc=Math.min(530/im.width,700/im.height),w=im.width*sc,h=im.height*sc;g.drawImage(im,rtl?W-cx-w:cx,cy+50,w,h);slot++}
+  const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4",compress:true});
+  pages.forEach((c,i)=>{const gg=c.getContext("2d");gg.direction=rtl?"rtl":"ltr";gg.textBaseline="middle";
+    gg.font=`400 17px ${F}`;gg.fillStyle="#8b8f8d";gg.textAlign="start";gg.fillText(t("generated")+" "+fdate(today()),X(70),H-50);gg.textAlign="end";gg.fillText(t("page")+" "+(i+1)+" / "+pages.length,X(1170),H-50);
+    if(i)doc.addPage();doc.addImage(c.toDataURL("image/jpeg",.86),"JPEG",0,0,210,297)});
+  await saveFile(fileSafe(R.title)+".pdf",doc.output("blob"))}
+
+/* ---------- actions ---------- */
+function go(tab){S.tab=tab;S.sub=null;S.q="";try{location.hash=tab}catch(e){}render()}
+const A={
+tab:d=>{if(d.k==="team")S.team=null;go(d.k)},
+back:()=>{const v=S.sub&&S.sub.v;if(v==="acc"){S.sub=null;S.tab="accounts"}else if(v){S.sub=null}else S.tab="home";S.q="";render()},
+goAccounts:()=>go("accounts"),goReports:()=>go("reports"),goTeam:()=>{S.team=null;go("team")},
+goCats:()=>{go("prefs");const e=$("#sec-cats");e&&e.scrollIntoView()},goCcs:()=>{go("prefs");const e=$("#sec-ccs");e&&e.scrollIntoView()},
+xlsAll:()=>exportAll(),
+openAcc:d=>{S.sub={v:"acc",id:d.id};render()},
+newAcc:()=>simpleSheet(t("newAcc"),t("accName"),"",v=>{S.main.accounts.push({id:uidGen("a"),name:v});Store.save("main")}),
+renameAcc:d=>simpleSheet(t("rename"),t("accName"),accName(d.id),v=>{S.main.accounts.find(a=>a.id===d.id).name=v;Store.save("main")}),
+delAcc:(d,el)=>{if(allTx().some(x=>x.acc===d.id)||S.main.accounts.length<2){toast(t("accHasTx"));return}
+  if(!el.dataset.arm){el.dataset.arm=1;el.textContent=t("delAgain");return}
+  S.main.accounts=S.main.accounts.filter(a=>a.id!==d.id);S.main.reports=S.main.reports.filter(r=>r.acc!==d.id);Store.save("main");S.sub=null;S.tab="accounts";render()},
+newTx:d=>txSheet({id:uidGen("t"),type:d.type,amt:0,desc:"",date:today(),acc:d.acc||(S.sub&&S.sub.v==="acc"?S.sub.id:S.main.accounts[0].id),cat:"",cc:"",att:false},true),
+editTx:d=>{let x=findTx(d.id);if(x&&x.link)x=findTx(x.link);if(!x)return;x.acc==="col"?colSheet(x,false):txSheet(x,false)},
+goCol:()=>{S.tab="home";S.sub={v:"col"};S.q="";render()},
+newCol:d=>colSheet({id:uidGen("c"),acc:"col",kind:d.kind,type:d.kind==="col"?"in":"out",amt:0,party:"",ref:"",desc:"",date:today(),to:S.main.accounts[0].id,att:false},true),
+delCol:(d,el)=>{if(!el.dataset.arm){el.dataset.arm=1;el.textContent=t("delAgain");return}
+  const x=findTx(sheetState.x.id);if(x){dropTx(x);if(x.att)Store.delAtt(x.id);const l=findTx(x.id+"f");if(l)dropTx(l)}closeSheet();toast(t("deleted"));render()},
+txType:(d,el)=>{sheetState.x.type=d.type;el.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===el))},
+rmAtt:()=>{sheetState.att=null;drawAtt(null)},
+delTx:(d,el)=>{if(!el.dataset.arm){el.dataset.arm=1;el.textContent=t("delAgain");return}
+  const x=findTx(sheetState.x.id);if(x){dropTx(x);if(x.att)Store.delAtt(x.id)}closeSheet();toast(t("deleted"));render()},
+closeSheet:()=>closeSheet(),
+seed:()=>{const d=new Date(),day=n=>{const z=new Date(d);z.setDate(d.getDate()-n);return z.getFullYear()+"-"+String(z.getMonth()+1).padStart(2,"0")+"-"+String(z.getDate()).padStart(2,"0")},m=S.main,a=m.accounts[0].id;
+  [["in",200000,9,lang()==="ar"?"عهدة من الشركة":"Float received from office","",0],["out",18500,7,m.cats[0],m.cats[0],1],["out",6400,5,m.cats[2],m.cats[2],1],["out",32000,3,m.cats[5]||m.cats[0],m.cats[5]||"",2],["out",4500,1,m.cats[1],m.cats[1],1]]
+  .forEach((r,i)=>putTx({id:uidGen("t")+i,type:r[0],amt:r[1],date:day(r[2]),desc:r[3],cat:r[4],cc:m.ccs[r[5]]||"",acc:a,att:false,ts:Date.now()+i,ex:true}));render()},
+rmSeed:()=>{allTx().filter(x=>x.ex).forEach(dropTx);render()},
+newRep:()=>repSheet(),
+openRep:d=>{S.sub={v:"report",id:d.id};render()},
+delRep:(d,el)=>{if(!el.dataset.arm){el.dataset.arm=1;el.textContent=t("delAgain");return}
+  S.main.reports=S.main.reports.filter(r=>r.id!==S.sub.id);Store.save("main");S.sub=null;render()},
+pdf:()=>{const c=currentR();exportPdf(c.R,c.get).catch(()=>toast(t("dlFail")))},
+xls:()=>exportXlsx(currentR().R),
+sendRep:async(d,el)=>{if(!Store.db){toast(t("sendNeeds"));return}el.disabled=true;const id=S.sub.id,c=currentR();
+  try{await Store.submit(id,c.R);S.shared[id]={status:"submitted",note:""};toast(t("sent"))}catch(e){Store.fail(e)}render()},
+openTeam:d=>{S.sub={v:"treport",i:+d.i};render()},
+review:async(d,el)=>{const R=S.team[S.sub.i],note=$("#mnote").value.trim();el.disabled=true;
+  try{await Store.review(R.uid,R.rid,{status:d.s,note,reviewedAt:new Date().toISOString()});R.status=d.s;R.note=note;if(R.uid===Store.uid)S.shared[R.rid]={status:d.s,note};toast(t("saved"))}catch(e){Store.fail(e)}
+  S.sub=null;render()},
+backup:async()=>{toast(t("building"));let att={};try{att=Store.idb?await IDB.all("att"):{}}catch(e){}
+  saveFile("float-manager-backup-"+today()+".json",new Blob([JSON.stringify({app:"float-manager",v:1,saved:new Date().toISOString(),main:S.main,months:S.months,att})],{type:"application/json"}))},
+restoreGo:async(d,el)=>{const b=sheetState.b;el.disabled=true;
+  try{S.main=b.main;S.months=b.months||{};if(Store.idb){await IDB.clear("att");for(const k in (b.att||{}))await IDB.put("att",k,b.att[k])}Store.save("main");closeSheet();toast(t("restored"));go("home")}catch(e){toast(t("saveFail"));el.disabled=false}},
+lang:d=>{S.main.lang=d.l;Store.save("main");render()},
+rmItem:d=>{S.main[d.k].splice(+d.i,1);Store.save("main");render()}
+};
+document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(el){if(el.tagName==="BUTTON"&&el.type!=="submit"||el.tagName!=="BUTTON")e.preventDefault();A[el.dataset.a]&&A[el.dataset.a](el.dataset,el);return}
+  if(e.target.id==="sheet")closeSheet()});
+document.addEventListener("input",e=>{if(e.target.id==="cq"){S.q=e.target.value;$("#collist").innerHTML=colList(colTx())}
+  if(e.target.id==="q"){S.q=e.target.value;const id=S.sub.id;$("#txlist").innerHTML=accList(allTx().filter(x=>x.acc===id))}});
+document.addEventListener("change",async e=>{const el=e.target;
+  if(el.id==="f-att"&&el.files[0]){try{const d=await shrink(el.files[0]);sheetState.att=d;drawAtt(d)}catch(err){toast(t("photoBig"))}}
+  if(el.id==="f-restore"&&el.files[0]){let b=null;try{b=JSON.parse(await el.files[0].text())}catch(err){}
+    if(!b||b.app!=="float-manager"||!b.main||!Array.isArray(b.main.accounts)){toast(t("badBackup"));el.value="";return}
+    let n=0;for(const k in (b.months||{}))n+=Object.keys(b.months[k].items||{}).length;
+    sheetState={b};openSheet(t("restoreT"),`<div class="note warn">${t("restoreQ")} <b>${esc(fdate((b.saved||"").slice(0,10)))}</b> · ${n} ${t("entriesN")} · ${Object.keys(b.att||{}).length} ${t("photosN")}</div><button class="btn red block" data-a="restoreGo">${t("restoreGo")}</button><button class="btn ghost block" data-a="closeSheet">${t("cancel")}</button>`)}
+  if(el.dataset.set){const v=el.value.trim();S.main[el.dataset.set]=el.dataset.set==="cur"?(v||"SAR"):v;Store.save("main")}});
+document.addEventListener("submit",async e=>{e.preventDefault();const f=e.target,k=f.dataset.form,fd=new FormData(f);
+  if(k==="tx"){const st=sheetState,amt=parseAmt(fd.get("amt"));if(!amt){toast(t("needAmt"));$("#f-amt").focus();return}
+    const old=st.isNew?null:findTx(st.x.id),x={...st.x,amt,desc:String(fd.get("desc")).trim(),date:fd.get("date")||today(),acc:fd.get("acc"),cat:fd.get("cat"),cc:fd.get("cc"),ts:st.x.ts||Date.now()};
+    const btn=f.querySelector("button.green");btn.disabled=true;
+    try{if(st.att){await Store.putAtt(x.id,st.att);x.att=true}else if(st.att===null&&x.att){await Store.delAtt(x.id);x.att=false}}catch(err){Store.fail(err);btn.disabled=false;return}
+    if(old&&old.date.slice(0,7)!==x.date.slice(0,7))dropTx(old);putTx(x);closeSheet();toast(t("saved"));render()}
+  if(k==="col"){const st=sheetState,amt=parseAmt(fd.get("amt"));if(!amt){toast(t("needAmt"));$("#f-amt").focus();return}
+    const old=st.isNew?null:findTx(st.x.id),g=n=>String(fd.get(n)||"").trim();
+    const x={...st.x,amt,party:g("party"),ref:g("ref"),desc:g("desc"),date:fd.get("date")||today(),to:fd.get("to")||st.x.to,ts:st.x.ts||Date.now()};
+    const btn=f.querySelector("button.green");btn.disabled=true;
+    try{if(st.att){await Store.putAtt(x.id,st.att);x.att=true}else if(st.att===null&&x.att){await Store.delAtt(x.id);x.att=false}}catch(err){Store.fail(err);btn.disabled=false;return}
+    if(old&&old.date.slice(0,7)!==x.date.slice(0,7))dropTx(old);
+    if(x.kind==="flt"){const lid=x.id+"f",ol=findTx(lid);if(ol&&ol.date.slice(0,7)!==x.date.slice(0,7))dropTx(ol);
+      putTx({id:lid,link:x.id,type:"in",acc:x.to,amt,date:x.date,desc:t("floatFrom"),cat:"",cc:"",att:false,ts:x.ts})}
+    putTx(x);const over=sums(colTx()).bal<0;closeSheet();toast(t(over?"overCol":"saved"));render()}
+  if(k==="simple"){const v=String(fd.get("v")).trim();if(!v)return;const cb=sheetState.cb;closeSheet();cb(v);render()}
+  if(k==="rep"){let from=fd.get("from"),to=fd.get("to");if(from>to)[from,to]=[to,from];
+    const r={id:uidGen("r"),title:String(fd.get("title")).trim()||t("repDefault"),acc:fd.get("acc"),from,to,created:today()};S.main.reports.push(r);Store.save("main");closeSheet();S.tab="reports";S.sub={v:"report",id:r.id};render()}
+  if(k==="addItem"){const key=f.dataset.k,v=String(fd.get("v")).trim();if(!v)return;if(S.main[key].includes(v)){toast(t("exists"));return}S.main[key].push(v);Store.save("main");render();const i=$("#add-"+key);i&&i.focus()}
+});
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(S.main&&["home","accounts","reports","team","prefs"].includes(h)&&(h!==S.tab||S.sub)){if(h==="team"&&!(Store.mgr&&Store.db))return;S.tab=h;S.sub=null;render()}});
+
+window.nativeBack=()=>{if(!$("#sheet").hidden){closeSheet();return true}if(S.main&&(S.sub||S.tab!=="home")){A.back();return true}return false};
+/* ---------- boot ---------- */
+async function boot(){setDir();$("#top").innerHTML=`<div class="mark">${ic("coin",18)}</div><h1>${t("app")}</h1>`;$("#nav").innerHTML="";
+  $("#view").innerHTML=`<div class="card empty">${t("loading")}</div>`;
+  const unreach=()=>{$("#view").innerHTML=`<div class="card empty">${t("unreach")}<button class="btn soft" data-a="retry">${t("retry")}</button></div>`};
+  const timer=setTimeout(unreach,12000);
+  try{if(!Store.inited){await Store.init();Store.inited=true}await Store.load()}catch(e){clearTimeout(timer);unreach();return}
+  clearTimeout(timer);const h=location.hash.slice(1);if(["accounts","reports","prefs"].includes(h))S.tab=h;render()}
+A.retry=()=>boot();
+boot();
+</script>
+</body>
+</html>
